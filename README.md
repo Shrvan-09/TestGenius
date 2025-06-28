@@ -47,7 +47,7 @@ An AI-powered SaaS platform that auto-generates Playwright test scripts by scann
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/Shrvan-09/TestGenius.git
-cd TestGenius
+cd TestGenius/project
 ```
 
 ### 2. Install Dependencies
