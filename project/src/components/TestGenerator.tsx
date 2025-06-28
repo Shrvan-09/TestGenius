@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Globe, Code, Play, Download, Copy, CheckCircle, XCircle, Clock, Loader } from 'lucide-react';
+import { ArrowLeft, Globe, Code, Play, Copy, XCircle, Loader } from 'lucide-react';
 import CodeEditor from './CodeEditor';
 import TestResults from './TestResults';
+import { db } from '../firebase'; // adjust path as needed
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+interface User {
+  uid: string;
+  // Add other user properties as needed
+}
 
 interface TestGeneratorProps {
   onBack: () => void;
+  user: User | null;
 }
 
 interface TestData {
@@ -29,7 +37,7 @@ interface ExecutionResults {
   screenshots: any[];
 }
 
-const TestGenerator: React.FC<TestGeneratorProps> = ({ onBack }) => {
+const TestGenerator: React.FC<TestGeneratorProps> = ({ onBack, user }) => {
   const [url, setUrl] = useState('');
   const [testType, setTestType] = useState('basic');
   const [language, setLanguage] = useState('javascript');
@@ -116,11 +124,27 @@ const TestGenerator: React.FC<TestGeneratorProps> = ({ onBack }) => {
       const results = await response.json();
       setExecutionResults(results);
       setActiveTab('results');
+
+      // Save test result to history
+      if (user) {
+        await saveTestResult(user.uid, testData.url, results.results.passed, results.results.failed, results.results.passed + results.results.failed + results.results.skipped);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during execution');
     } finally {
       setExecuting(false);
     }
+  };
+
+  const saveTestResult = async (userId: string, url: string, passed: number, failed: number, total: number) => {
+    await addDoc(collection(db, "testHistory"), {
+      userId,
+      url,
+      passed,
+      failed,
+      total,
+      date: serverTimestamp()
+    });
   };
 
   const copyToClipboard = () => {

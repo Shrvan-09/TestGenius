@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Sparkles, Code, Play, CheckCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, Code, CheckCircle } from 'lucide-react';
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -36,23 +36,13 @@ const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
             <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </button>
           
-          <button className="px-8 py-4 border border-gray-600 text-gray-300 rounded-xl font-semibold hover:border-gray-500 hover:text-white transition-all flex items-center backdrop-blur-sm">
-            <Play className="mr-2 h-5 w-5" />
-            Watch Demo
-          </button>
+          
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-        <div className="text-center p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
-          <div className="text-3xl font-bold text-white mb-2">10,000+</div>
-          <div className="text-gray-400">Tests Generated</div>
-        </div>
-        <div className="text-center p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
-          <div className="text-3xl font-bold text-white mb-2">99.9%</div>
-          <div className="text-gray-400">Uptime</div>
-        </div>
+        
         <div className="text-center p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
           <div className="text-3xl font-bold text-white mb-2">{"< 30s"}</div>
           <div className="text-gray-400">Generation Time</div>

@@ -1,11 +1,15 @@
 import React from 'react';
 import { 
-  Zap, Shield, Globe, Code, Play, BarChart3, 
+  Zap, Shield, Globe, Code, BarChart3, 
   Smartphone, Monitor, Layers, CheckCircle2,
   ArrowRight, Sparkles
 } from 'lucide-react';
 
-const Features: React.FC = () => {
+interface FeaturesProps {
+  onStartNow?: () => void;
+}
+
+const Features: React.FC<FeaturesProps> = ({ onStartNow }) => {
   const features = [
     {
       icon: Zap,
@@ -155,13 +159,14 @@ const Features: React.FC = () => {
           Join thousands of developers who have already streamlined their testing workflow with TestGenius.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="group px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-2xl shadow-purple-500/25 flex items-center justify-center">
-            Start Free Trial
+          <button
+            className="group px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-2xl shadow-purple-500/25 flex items-center justify-center"
+            onClick={onStartNow}
+          >
+            Start Now
             <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </button>
-          <button className="px-8 py-4 border border-gray-600 text-gray-300 rounded-xl font-semibold hover:border-gray-500 hover:text-white transition-all backdrop-blur-sm">
-            Schedule Demo
-          </button>
+          
         </div>
       </div>
     </div>
