@@ -732,3 +732,314 @@ npx netlify deploy --prod
 6. **SSL**: Ensure HTTPS is enabled
 7. **Rate Limiting**: Implement API rate limiting
 8. **CORS**: Configure proper CORS settings
+
+---
+
+## 🎯 Project Overview and Architecture
+
+### TestGenius Platform Components
+
+#### Frontend (React + TypeScript + Vite)
+- **Location:** `/src/`
+- **Entry Point:** `main.tsx`
+- **Main App:** `App.tsx`
+- **Key Components:**
+  - `Hero.tsx` - Landing page and main navigation
+  - `TestGenerator.tsx` - AI test generation interface
+  - `TestResults.tsx` - Test execution results display
+  - `UserProfile.tsx` - User dashboard and authentication
+  - `Features.tsx` - Feature showcase
+  - `CodeEditor.tsx` - Syntax-highlighted code display
+
+#### Backend (Node.js + Express)
+- **Location:** `/server/`
+- **Entry Point:** `index.js`
+- **API Routes:**
+  - `/routes/testGeneration.js` - AI-powered test script generation
+  - `/routes/testExecution.js` - Playwright test execution engine
+- **Static Assets:** Screenshots served from `/server/screenshots/`
+
+#### Configuration Files
+- `package.json` - Dependencies and npm scripts
+- `vite.config.ts` - Vite build configuration with proxy setup
+- `tailwind.config.js` - Tailwind CSS styling framework
+- `tsconfig.json` - TypeScript compiler configuration
+- `eslint.config.js` - Code linting rules
+- `firestore.rules` - Firebase security rules
+- `.env` - Environment variables (not in repo)
+
+#### Deployment and DevOps
+- `Dockerfile` - Container configuration
+- `vercel.json` - Vercel platform deployment config
+- `railway.json` - Railway platform deployment config
+- `Procfile` - Heroku process configuration
+- `/scripts/` - Automated deployment and verification scripts
+
+### Key Features Implementation
+
+#### 1. AI Test Generation Flow
+```
+User Input (URL) → DOM Analysis (Cheerio) → AI Processing (Gemini) → Playwright Test Code
+```
+
+**Technologies:**
+- **Cheerio** for server-side HTML parsing
+- **Google Gemini AI** for intelligent test scenario generation
+- **Custom prompt engineering** for Playwright-specific code generation
+
+#### 2. Test Execution Engine
+```
+Test Code → Playwright Launch → Browser Automation → Screenshot Capture → Results Analysis
+```
+
+**Technologies:**
+- **Playwright** for cross-browser testing (Chromium, Firefox, Safari)
+- **Node.js fs module** for screenshot storage
+- **Custom error handling** with AI-powered failure analysis
+
+#### 3. User Management System
+```
+Firebase Auth → User Registration/Login → Firestore Data → User-Specific Tests
+```
+
+**Technologies:**
+- **Firebase Authentication** for secure user management
+- **Firestore Database** for real-time data storage
+- **Security rules** for user data isolation
+
+#### 4. Real-Time UI Updates
+```
+Test Status → WebSocket/Polling → Live Progress → Results Display
+```
+
+**Technologies:**
+- **React state management** for real-time updates
+- **Axios** for API communication
+- **Tailwind CSS** for responsive UI design
+
+### Development Workflow
+
+#### Standard Development Process
+1. **Setup:** Clone repo, install dependencies, configure environment
+2. **Development:** Run `npm run dev` for concurrent frontend/backend
+3. **Testing:** Manual testing through UI, API endpoint testing
+4. **Building:** `npm run build` for production build
+5. **Deployment:** Platform-specific deployment scripts
+
+#### File Modification Workflow
+```bash
+# Frontend changes
+src/components/*.tsx → Hot reload via Vite
+
+# Backend changes  
+server/*.js → Auto-restart via Nodemon
+
+# Configuration changes
+*.config.js → Requires manual restart
+```
+
+### Environment Setup Details
+
+#### Required Environment Variables
+```env
+# Core AI Functionality
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Firebase Integration (All Required)
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=project-id
+VITE_FIREBASE_STORAGE_BUCKET=project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
+
+# Optional Configuration
+NODE_ENV=development|production
+PORT=3001
+DEBUG=true|false
+```
+
+#### Development vs Production Differences
+- **Development:** Hot reload, detailed logging, local file storage
+- **Production:** Optimized builds, error tracking, cloud storage integration
+
+### Security Implementation
+
+#### Frontend Security
+- Environment variables prefixed with `VITE_` for browser exposure
+- Firebase client-side authentication
+- Input validation and sanitization
+
+#### Backend Security
+- CORS configuration for cross-origin requests
+- Environment variable validation
+- Firestore security rules for data access
+- Input sanitization for AI prompts
+
+#### Database Security (Firestore Rules)
+```javascript
+// User can only access their own data
+match /users/{userId} {
+  allow read, write: if request.auth != null && request.auth.uid == userId;
+}
+
+// Tests are user-specific
+match /tests/{testId} {
+  allow read, write: if request.auth != null && 
+    request.auth.uid == resource.data.userId;
+}
+```
+
+### Performance Considerations
+
+#### Frontend Optimization
+- Vite for fast development and optimized production builds
+- Code splitting and lazy loading
+- Tailwind CSS purging for smaller bundle sizes
+- Image optimization for screenshots
+
+#### Backend Optimization
+- Playwright browser instance management
+- Concurrent test execution limits
+- Screenshot compression and cleanup
+- API response caching
+
+### Troubleshooting Common Issues
+
+#### Browser Installation Problems
+```bash
+# Full browser installation
+npx playwright install --with-deps
+
+# Verify installation
+npx playwright --version
+
+# Test browser launch
+node -e "require('playwright').chromium.launch().then(() => console.log('OK'))"
+```
+
+#### Firebase Connection Issues
+```bash
+# Test Firebase config
+node -e "
+const { initializeApp } = require('firebase/app');
+const config = require('./src/firebase.ts');
+try { 
+  initializeApp(config); 
+  console.log('Firebase OK'); 
+} catch(e) { 
+  console.error('Firebase Error:', e.message); 
+}
+"
+```
+
+#### API Communication Problems
+```bash
+# Test backend directly
+curl http://localhost:3001/api/health
+
+# Test with authentication
+curl -H "Authorization: Bearer token" http://localhost:3001/api/generate-test
+```
+
+### Advanced Configuration
+
+#### Custom Playwright Configuration
+Location: `server/routes/testExecution.js`
+```javascript
+const browserOptions = {
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  viewport: { width: 1280, height: 720 }
+};
+```
+
+#### AI Prompt Customization
+Location: `server/routes/testGeneration.js`
+- Modify system prompts for different test types
+- Adjust AI temperature for creativity vs consistency
+- Customize output format requirements
+
+#### Screenshot Configuration
+```javascript
+// Screenshot options
+const screenshotOptions = {
+  path: `screenshots/${filename}`,
+  fullPage: true,
+  quality: 80,
+  type: 'png'
+};
+```
+
+### Monitoring and Debugging
+
+#### Application Health Checks
+```bash
+# Local health check
+npm run health-check http://localhost:3001
+
+# Production health check
+npm run health-check https://your-app.com
+```
+
+#### Log Analysis
+- **Frontend:** Browser DevTools Console
+- **Backend:** Terminal output with Nodemon
+- **Production:** Platform-specific logging (Vercel Functions, Railway Logs)
+
+#### Performance Monitoring
+- API response times
+- Test execution duration
+- Memory usage during browser automation
+- Screenshot generation speed
+
+---
+
+## 📚 Additional Resources
+
+### Official Documentation
+- [Playwright Documentation](https://playwright.dev/)
+- [Google Gemini AI](https://ai.google.dev/)
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [Vite Documentation](https://vitejs.dev/)
+- [React Documentation](https://react.dev/)
+
+### Useful Commands Quick Reference
+```bash
+# Project Setup
+npm install
+npx playwright install chromium --with-deps
+
+# Development
+npm run dev              # Start both frontend and backend
+npm run dev:frontend     # Frontend only
+npm run dev:backend      # Backend only
+
+# Building and Testing
+npm run build            # Production build
+npm run preview          # Test production build
+npm run lint             # Code linting
+
+# Deployment
+npm run deploy:vercel    # Deploy to Vercel
+npm run deploy:railway   # Deploy to Railway
+npm run health-check     # Check application health
+npm run verify-deployment # Verify deployment
+
+# Troubleshooting
+npm audit fix            # Fix security vulnerabilities
+rm -rf node_modules && npm install  # Clean reinstall
+npx playwright --version # Check Playwright installation
+```
+
+### Best Practices
+1. **Always test locally** before deploying
+2. **Use environment variables** for all configuration
+3. **Monitor application health** after deployment
+4. **Keep dependencies updated** regularly
+5. **Follow security best practices** for API keys
+6. **Document any custom modifications** for team members
+
+---
+
+**This completes the comprehensive setup and troubleshooting guide for TestGenius. The platform is now fully documented and ready for development and deployment! 🚀**
