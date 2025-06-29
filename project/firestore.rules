@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read and write their own test history
+    match /testHistory/{document} {
+      // Allow users to read their own test history
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Allow users to create new test history entries for themselves
+      allow create: if request.auth != null && 
+                   request.auth.uid == request.resource.data.userId;
+      
+      // Allow users to update their own test history (optional)
+      allow update: if request.auth != null && 
+                   request.auth.uid == resource.data.userId;
+      
+      // Allow users to delete their own test history (optional)
+      allow delete: if request.auth != null && 
+                   request.auth.uid == resource.data.userId;
+    }
+    
+    // You can add more collections here as needed
+    // Example for user profiles:
+    // match /users/{userId} {
+    //   allow read, write: if request.auth != null && request.auth.uid == userId;
+    // }
+  }
+}

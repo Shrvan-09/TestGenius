@@ -1,26 +1,56 @@
-import React from 'react';
-import { CheckCircle, XCircle, Clock, Download, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { CheckCircle, XCircle, Clock, Download, Eye, AlertTriangle, Info, ChevronDown, ChevronUp, Bot } from 'lucide-react';
 
+interface TestCase {
+  name: string;
+  status: 'passed' | 'failed' | 'skipped';
+  error?: string;
+  location?: string;
+  timestamp: string;
+  duration?: number;
+  details?: string;
+  troubleshooting?: string[];
+}
 
 interface TestResultsProps {
   results: {
     testId: string;
     status: string;
+    url?: string;
     results: {
       passed: number;
       failed: number;
       skipped: number;
       duration: number;
+      total?: number;
     };
+    testCases?: TestCase[];
     logs: string[];
     screenshots: any[];
+    aiAnalysis?: string;
+    summary?: {
+      successRate: number;
+      criticalFailures: number;
+      recommendations: string[];
+    };
   };
 }
 
 const TestResults: React.FC<TestResultsProps> = ({ results }) => {
-  const { passed, failed, skipped, duration } = results.results;
-  const total = passed + failed + skipped;
-  const successRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+  const [expandedTestCase, setExpandedTestCase] = useState<string | null>(null);
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
+  
+  // Debug: Log screenshot data
+  React.useEffect(() => {
+    console.log('TestResults received data:', {
+      screenshots: results.screenshots,
+      screenshotCount: results.screenshots?.length || 0
+    });
+  }, [results.screenshots]);
+  
+  const { passed, failed, skipped, duration, total } = results.results;
+  const totalTests = total || passed + failed + skipped;
+  const successRate = totalTests > 0 ? Math.round((passed / totalTests) * 100) : 0;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,6 +75,19 @@ const TestResults: React.FC<TestResultsProps> = ({ results }) => {
         return <XCircle className="h-5 w-5 text-red-400" />;
       default:
         return <Clock className="h-5 w-5 text-gray-400" />;
+    }
+  };
+
+  const getTestCaseIcon = (status: string) => {
+    switch (status) {
+      case 'passed':
+        return <CheckCircle className="h-4 w-4 text-green-400" />;
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-red-400" />;
+      case 'skipped':
+        return <Clock className="h-4 w-4 text-yellow-400" />;
+      default:
+        return <Info className="h-4 w-4 text-gray-400" />;
     }
   };
 
@@ -145,9 +188,163 @@ const TestResults: React.FC<TestResultsProps> = ({ results }) => {
         </div>
         <div className="flex justify-between text-sm text-gray-400 mt-2">
           <span>{passed} passed</span>
-          <span>{total} total tests</span>
+          <span>{totalTests} total tests</span>
         </div>
       </div>
+
+      {/* AI Analysis */}
+      {results.aiAnalysis && (
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <Bot className="h-5 w-5 text-purple-400" />
+              <h3 className="text-white font-semibold">AI Analysis</h3>
+            </div>
+            <button
+              onClick={() => setShowAIAnalysis(!showAIAnalysis)}
+              className="flex items-center space-x-1 text-purple-400 hover:text-purple-300"
+            >
+              <span className="text-sm">
+                {showAIAnalysis ? 'Hide' : 'Show'} Analysis
+              </span>
+              {showAIAnalysis ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+          </div>
+          {showAIAnalysis && (
+            <div className="bg-slate-900 rounded-lg p-4">
+              <div className="text-gray-300 text-sm whitespace-pre-wrap">
+                {results.aiAnalysis}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Detailed Test Cases */}
+      {results.testCases && results.testCases.length > 0 && (
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+          <h3 className="text-white font-semibold mb-4">Test Cases Details</h3>
+          <div className="space-y-3">
+            {results.testCases.map((testCase, index) => (
+              <div key={index} className="bg-slate-800 rounded-lg border border-gray-700">
+                <div 
+                  className="p-4 cursor-pointer"
+                  onClick={() => setExpandedTestCase(
+                    expandedTestCase === testCase.name ? null : testCase.name
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      {getTestCaseIcon(testCase.status)}
+                      <div>
+                        <div className="text-white font-medium">{testCase.name}</div>
+                        <div className="text-gray-400 text-sm">
+                          {testCase.location} • {new Date(testCase.timestamp).toLocaleTimeString()}
+                          {testCase.duration && ` • ${testCase.duration}ms`}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        testCase.status === 'passed' ? 'bg-green-500/20 text-green-400' :
+                        testCase.status === 'failed' ? 'bg-red-500/20 text-red-400' :
+                        'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {testCase.status.toUpperCase()}
+                      </span>
+                      {expandedTestCase === testCase.name ? 
+                        <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                {expandedTestCase === testCase.name && (
+                  <div className="px-4 pb-4 border-t border-gray-700">
+                    <div className="mt-4 space-y-3">
+                      {testCase.details && (
+                        <div>
+                          <div className="text-sm font-medium text-gray-300 mb-1">Description:</div>
+                          <div className="text-sm text-gray-400">{testCase.details}</div>
+                        </div>
+                      )}
+                      
+                      {testCase.error && (
+                        <div>
+                          <div className="text-sm font-medium text-red-400 mb-1">Error:</div>
+                          <div className="text-sm text-red-300 bg-red-500/10 p-2 rounded font-mono">
+                            {testCase.error}
+                          </div>
+                        </div>
+                      )}
+
+                      {testCase.troubleshooting && testCase.troubleshooting.length > 0 && (
+                        <div>
+                          <div className="text-sm font-medium text-yellow-400 mb-2 flex items-center">
+                            <AlertTriangle className="h-4 w-4 mr-1" />
+                            Troubleshooting Tips:
+                          </div>
+                          <ul className="text-sm text-gray-400 space-y-1">
+                            {testCase.troubleshooting.map((tip, tipIndex) => (
+                              <li key={tipIndex} className="flex items-start">
+                                <span className="text-yellow-400 mr-2">•</span>
+                                {tip}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Summary and Recommendations */}
+      {results.summary && (
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+          <h3 className="text-white font-semibold mb-4">Summary & Recommendations</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="text-sm text-gray-400 mb-2">Success Rate</div>
+              <div className="text-2xl font-bold text-white">{results.summary.successRate}%</div>
+              {results.summary.criticalFailures > 0 && (
+                <div className="text-sm text-red-400 mt-1">
+                  {results.summary.criticalFailures} critical failures detected
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="text-sm text-gray-400 mb-2">Recommendations</div>
+              <ul className="space-y-1">
+                {results.summary.recommendations.map((rec, index) => (
+                  <li key={index} className="text-sm text-gray-300 flex items-start">
+                    <span className="text-blue-400 mr-2">•</span>
+                    {rec}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Test URL Info */}
+      {results.url && (
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+          <h3 className="text-white font-semibold mb-2">Test Target</h3>
+          <div className="text-gray-300">
+            <span className="text-gray-400">URL:</span> {results.url}
+          </div>
+          <div className="text-gray-300 text-sm mt-1">
+            <span className="text-gray-400">Test ID:</span> {results.testId}
+          </div>
+        </div>
+      )}
 
       {/* Test Logs */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
@@ -183,9 +380,23 @@ const TestResults: React.FC<TestResultsProps> = ({ results }) => {
               <div key={index} className="bg-slate-800 rounded-lg p-4 border border-gray-700">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white text-sm font-medium">{screenshot.name}</span>
-                  <button className="p-1 text-gray-400 hover:text-white transition-colors">
-                    <Eye className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => {
+                        console.log('Screenshot data:', screenshot);
+                        if (screenshot.url) {
+                          window.open(screenshot.url, '_blank');
+                        }
+                      }}
+                      className="p-1 text-gray-400 hover:text-white transition-colors"
+                      title="Open screenshot in new tab"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mb-2">
+                  URL: {screenshot.url || 'No URL'} | File: {screenshot.filename || 'No filename'}
                 </div>
                 <div className="aspect-video bg-gradient-to-br from-gray-700 to-gray-800 rounded flex items-center justify-center overflow-hidden">
                   {screenshot.url || screenshot.data ? (
@@ -193,9 +404,27 @@ const TestResults: React.FC<TestResultsProps> = ({ results }) => {
                       src={screenshot.url || `data:image/png;base64,${screenshot.data}`}
                       alt={screenshot.name}
                       className="object-contain max-h-full max-w-full"
+                      onError={(e) => {
+                        console.error('Failed to load screenshot:', screenshot.url);
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `
+                            <div class="text-center p-4">
+                              <span class="text-red-400 text-xs block">Failed to load image</span>
+                              <span class="text-gray-500 text-xs">${screenshot.filename || 'unknown'}</span>
+                            </div>
+                          `;
+                        }
+                      }}
+                      onLoad={() => console.log('Screenshot loaded successfully:', screenshot.url)}
                     />
                   ) : (
-                    <span className="text-gray-500 text-xs">Screenshot Preview</span>
+                    <div className="text-center p-4">
+                      <span className="text-gray-500 text-xs block">No screenshot available</span>
+                      <span className="text-gray-600 text-xs">{screenshot.filename || 'unknown'}</span>
+                    </div>
                   )}
                 </div>
                 <div className="text-xs text-gray-400 mt-2">

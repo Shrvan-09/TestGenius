@@ -112,7 +112,8 @@ const TestGenerator: React.FC<TestGeneratorProps> = ({ onBack, user }) => {
         body: JSON.stringify({
           code: testData.code,
           language: testData.language,
-          testId: testData.testId
+          testId: testData.testId,
+          url: testData.url
         }),
       });
 
@@ -137,14 +138,27 @@ const TestGenerator: React.FC<TestGeneratorProps> = ({ onBack, user }) => {
   };
 
   const saveTestResult = async (userId: string, url: string, passed: number, failed: number, total: number) => {
-    await addDoc(collection(db, "testHistory"), {
-      userId,
-      url,
-      passed,
-      failed,
-      total,
-      date: serverTimestamp()
-    });
+    try {
+      if (!userId) {
+        console.warn('No user ID provided, skipping save to Firestore');
+        return;
+      }
+      
+      await addDoc(collection(db, "testHistory"), {
+        userId,
+        url,
+        passed,
+        failed,
+        total,
+        date: serverTimestamp()
+      });
+      
+      console.log('Test result saved successfully');
+    } catch (error) {
+      console.error('Failed to save test result to Firestore:', error);
+      // Don't throw the error to avoid breaking the test execution flow
+      // You could show a toast notification here instead
+    }
   };
 
   const copyToClipboard = () => {

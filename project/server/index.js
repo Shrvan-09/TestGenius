@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { readdirSync } from 'fs';
 import testGenerationRoutes from './routes/testGeneration.js';
 import testExecutionRoutes from './routes/testExecution.js';
 
@@ -28,6 +29,28 @@ app.use('/api/execute', testExecutionRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Debug endpoint to list screenshots
+app.get('/api/screenshots', (req, res) => {
+  const screenshotsPath = path.join(__dirname, 'screenshots');
+  
+  try {
+    const files = readdirSync(screenshotsPath);
+    const screenshots = files.map(file => ({
+      filename: file,
+      url: `/screenshots/${file}`,
+      fullUrl: `http://localhost:${PORT}/screenshots/${file}`
+    }));
+    
+    res.json({
+      count: screenshots.length,
+      screenshots: screenshots,
+      screenshotsPath: screenshotsPath
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to read screenshots directory', message: error.message });
+  }
 });
 
 // Serve static files in production
