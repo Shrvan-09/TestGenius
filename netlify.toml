@@ -1,19 +1,19 @@
 [build]
   base = "project"
   publish = "project/dist"
-  command = "npm install && npm run build"
+  command = "npm install && npx playwright install chromium --with-deps && npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  to = "/.netlify/functions/server/:splat"
   status = 200
 
 [[redirects]]
   from = "/screenshots/*"
-  to = "/.netlify/functions/api/screenshots/:splat"
+  to = "/.netlify/functions/server/screenshots/:splat"
   status = 200
 
 [[redirects]]
@@ -23,3 +23,4 @@
 
 [functions]
   directory = "project/netlify/functions"
+  node_bundler = "esbuild"
