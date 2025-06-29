@@ -1,0 +1,14 @@
+{
+  "name": "testgenius",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "cd project && npm run dev",
+    "build": "cd project && npm run build",
+    "preview": "cd project && npm run preview",
+    "start": "cd project && npm start"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
