@@ -13,6 +13,7 @@
     "start": "node server/index.js",
     "deploy:vercel": "./scripts/deploy-vercel.sh",
     "deploy:railway": "./scripts/deploy-railway.sh",
+    "deploy:netlify": "netlify deploy --prod",
     "health-check": "./scripts/health-check.sh",
     "verify-deployment": "./scripts/verify-deployment.sh",
     "build:production": "./scripts/build.sh",
