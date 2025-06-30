@@ -1,33 +1,4 @@
 # 🧪 TestGenius - AI-Powered Testing Platform
-## 🏆 Bolt Hackathon 2025 Submission
-
-> **Built for Bolt Hackathon** - Showcasing the power of AI-driven test automation with modern web technologies
-
-TestGenius is an intelligent SaaS platform that leverages AI to automatically generate, execute, and analyze Playwright test scripts by scanning website DOM structures. Built during the Bolt Hackathon to demonstrate the future of automated testing.
-
----
-
-## 🏆 Hackathon Highlights
-
-### 🚀 **Innovation Score**
-- **AI-First Approach** - Google Gemini AI for intelligent test generation
-- **Real-time Execution** - Live browser automation with Playwright
-- **Visual Feedback** - Screenshot capture and failure analysis
-- **Production Ready** - Full authentication and deployment pipeline
-
-### 🎯 **Technical Excellence**
-- **Modern Stack** - React 18, TypeScript, Node.js, Firebase
-- **Cloud Native** - Multi-platform deployment (Vercel, Railway, Netlify)
-- **Security First** - Firebase Auth, Firestore rules, environment protection
-- **Developer Experience** - Hot reload, TypeScript, comprehensive documentation
-
-### 💡 **Problem Solving**
-- **Manual Testing Pain** - Eliminates repetitive test writing
-- **Cross-browser Compatibility** - Automated testing across browsers
-- **Team Collaboration** - Shared test history and results
-- **Scalable Architecture** - Ready for enterprise deployment
-
----
 
 ## ✨ Key Features
 
