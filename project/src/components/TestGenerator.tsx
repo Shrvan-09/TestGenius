@@ -21,7 +21,29 @@ interface TestData {
   testType: string;
   language: string;
   code: string;
-  analysis: any;
+  analysis: {
+    title?: string;
+    elements?: Array<{
+      type: string;
+      selector: string;
+      action: string;
+    }>;
+    buttons?: Array<{
+      selector: string;
+      text: string;
+    }>;
+    forms?: Array<{
+      selector: string;
+      inputs: string[];
+    }>;
+    links?: Array<{
+      selector: string;
+      text: string;
+      href: string;
+    }>;
+    recommendations?: string[];
+    complexity?: string;
+  };
 }
 
 interface ExecutionResults {
@@ -34,7 +56,12 @@ interface ExecutionResults {
     duration: number;
   };
   logs: string[];
-  screenshots: any[];
+  screenshots: Array<{
+    filename: string;
+    path: string;
+    step: string;
+    timestamp: string;
+  }>;
 }
 
 const TestGenerator: React.FC<TestGeneratorProps> = ({ onBack, user }) => {

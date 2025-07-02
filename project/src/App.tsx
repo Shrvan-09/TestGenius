@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bot as TestBot } from 'lucide-react';
 import TestGenerator from './components/TestGenerator';
+import VisualTesting from './components/VisualTesting';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import UserProfile from './components/UserProfile';
@@ -15,7 +16,7 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState(''); // <-- Username state
-  const [section, setSection] = useState<'home' | 'dashboard' | 'generator' | 'code' | 'results'>('home');
+  const [section, setSection] = useState<'home' | 'dashboard' | 'generator' | 'visual' | 'code' | 'results'>('home');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -51,8 +52,9 @@ function App() {
         // Optionally, sign out user until they verify email
         await signOut(auth);
       }
-    } catch (err: any) {
-      setAuthError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during authentication';
+      setAuthError(errorMessage);
     }
   };
 
@@ -70,8 +72,9 @@ function App() {
       setShowAuth(false);
       setSection('dashboard');
       setTimeout(() => alert(`Login successful! Welcome, ${auth.currentUser?.displayName || auth.currentUser?.email}`), 100);
-    } catch (err: any) {
-      setAuthError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during Google sign-in';
+      setAuthError(errorMessage);
     }
   };
 
@@ -133,10 +136,17 @@ function App() {
               >
                 Generator
               </button>
+              <button
+                className={`px-6 py-2 rounded-lg font-semibold ${section === 'visual' ? 'bg-purple-600 text-white' : 'bg-white/10 text-purple-200'}`}
+                onClick={() => setSection('visual')}
+              >
+                Visual Testing
+              </button>
             </div>
             {/* Section Content */}
             {section === 'dashboard' && <UserProfile user={user} />}
             {section === 'generator' && <TestGenerator onBack={() => setSection('dashboard')} user={user} />}
+            {section === 'visual' && <VisualTesting />}
           </>
         ) : (
           section === 'home' && (

@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Visual Testing Generated Files
+server/screenshots/*.png
+server/videos/*.webm

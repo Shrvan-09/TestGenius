@@ -7,6 +7,7 @@ import { dirname } from 'path';
 import { readdirSync } from 'fs';
 import testGenerationRoutes from './routes/testGeneration.js';
 import testExecutionRoutes from './routes/testExecution.js';
+import visualTestingRoutes from './routes/visualTesting.js';
 
 dotenv.config();
 
@@ -21,10 +22,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use('/screenshots', express.static(path.join(__dirname, 'screenshots')));
+app.use('/videos', express.static(path.join(__dirname, 'videos')));
 
 // Routes
 app.use('/api/generate', testGenerationRoutes);
 app.use('/api/execute', testExecutionRoutes);
+app.use('/api/visual', visualTestingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

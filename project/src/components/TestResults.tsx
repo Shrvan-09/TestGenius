@@ -26,7 +26,15 @@ interface TestResultsProps {
     };
     testCases?: TestCase[];
     logs: string[];
-    screenshots: any[];
+    screenshots: Array<{
+      filename: string;
+      name?: string;
+      path: string;
+      url?: string;
+      data?: string;
+      step: string;
+      timestamp: string;
+    }>;
     aiAnalysis?: string;
     summary?: {
       successRate: number;
