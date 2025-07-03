@@ -1,0 +1,222 @@
+name: 'AWS Deploy - TestGenius Resume Showcase'
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: '18'
+
+jobs:
+  test:
+    name: 'Test & Security Scan'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: project/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd project
+        npm ci
+    
+    - name: Run tests
+      run: |
+        cd project
+        npm test
+    
+    - name: Run ESLint
+      run: |
+        cd project
+        npm run lint
+    
+    - name: Build application
+      run: |
+        cd project
+        npm run build
+    
+    - name: Security audit
+      run: |
+        cd project
+        npm audit --audit-level high
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: project/dist/
+
+  deploy-dev:
+    name: 'Deploy to Development'
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/develop'
+    environment: development
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+        path: project/dist/
+    
+    - name: Deploy to AWS Dev
+      run: |
+        cd project/scripts
+        chmod +x deploy-aws.sh
+        ./deploy-aws.sh dev
+    
+    - name: Run health checks
+      run: |
+        cd project/scripts
+        chmod +x health-check-advanced.sh
+        LOAD_BALANCER_DNS=$(aws cloudformation describe-stacks \
+          --stack-name testgenius-dev \
+          --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerDNS`].OutputValue' \
+          --output text)
+        ./health-check-advanced.sh $LOAD_BALANCER_DNS
+    
+    - name: Setup monitoring
+      run: |
+        cd project/scripts
+        chmod +x setup-monitoring.sh
+        ./setup-monitoring.sh testgenius-dev dev
+
+  deploy-prod:
+    name: 'Deploy to Production'
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+        path: project/dist/
+    
+    - name: Deploy to AWS Production
+      run: |
+        cd project/scripts
+        chmod +x deploy-aws.sh
+        ./deploy-aws.sh prod
+    
+    - name: Run comprehensive health checks
+      run: |
+        cd project/scripts
+        chmod +x health-check-advanced.sh
+        LOAD_BALANCER_DNS=$(aws cloudformation describe-stacks \
+          --stack-name testgenius-prod \
+          --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerDNS`].OutputValue' \
+          --output text)
+        ./health-check-advanced.sh $LOAD_BALANCER_DNS
+    
+    - name: Setup production monitoring
+      run: |
+        cd project/scripts
+        chmod +x setup-monitoring.sh
+        ./setup-monitoring.sh testgenius-prod prod
+    
+    - name: Notify deployment success
+      uses: 8398a7/action-slack@v3
+      if: success()
+      with:
+        status: success
+        text: '🚀 TestGenius Production Deployment Successful!'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  security-scan:
+    name: 'Security & Compliance Scan'
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: 'project/'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  performance-test:
+    name: 'Performance Testing'
+    runs-on: ubuntu-latest
+    needs: [deploy-dev]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Run performance tests
+      run: |
+        LOAD_BALANCER_DNS=$(aws cloudformation describe-stacks \
+          --stack-name testgenius-dev \
+          --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerDNS`].OutputValue' \
+          --output text)
+        
+        # Install k6 for performance testing
+        sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+        
+        # Run performance test
+        k6 run --vus 10 --duration 30s --out json=performance-results.json \
+          -e BASE_URL=http://$LOAD_BALANCER_DNS \
+          project/tests/performance.js || true
+    
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: performance-results.json
