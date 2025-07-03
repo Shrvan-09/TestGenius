@@ -20,9 +20,9 @@ Parameters:
     Description: EC2 instance type
   
   KeyName:
-    Type: AWS::EC2::KeyPair::KeyName
-    Description: EC2 Key Pair for SSH access
-    Default: my-key-pair
+    Type: String
+    Description: EC2 Key Pair for SSH access (optional)
+    Default: ""
   
   MinSize:
     Type: Number
@@ -38,6 +38,9 @@ Parameters:
     Type: Number
     Default: 2
     Description: Desired number of instances
+
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
 
 Resources:
   # VPC and Networking
@@ -237,7 +240,7 @@ Resources:
       LaunchTemplateData:
         ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2
         InstanceType: !Ref InstanceType
-        KeyName: !Ref KeyName
+        KeyName: !If [HasKeyName, !Ref KeyName, !Ref "AWS::NoValue"]
         SecurityGroupIds:
           - !Ref WebServerSecurityGroup
         IamInstanceProfile:
