@@ -92,6 +92,40 @@ This AWS deployment showcases professional DevOps, cloud architecture, and autom
    ./deploy-aws.sh prod
    ```
 
+## 🚀 Quick Start Options
+
+### Option 1: AWS Production Deployment (Recommended for Resume)
+```bash
+# One-time setup
+cd project/scripts
+./setup-aws-environment.sh
+
+# Deploy to AWS
+./deploy-aws.sh dev      # Development environment
+./deploy-aws.sh prod     # Production environment
+```
+
+### Option 2: Local Development (No AWS Required)
+```bash
+# Quick local setup
+cd project/scripts
+./local-deploy.sh
+```
+
+### Option 3: Manual Setup
+```bash
+# Install dependencies
+cd project
+npm install
+
+# Build application
+npm run build
+
+# Start servers
+npm run dev            # Frontend (http://localhost:5173)
+cd server && node index.js  # Backend (http://localhost:3001)
+```
+
 ## 📊 Monitoring & Observability
 
 ### CloudWatch Dashboards
@@ -348,49 +382,15 @@ https://your-cloudfront-domain.com
    ./deploy-aws.sh dev
    ```
 
-### 🎯 Zero-Downtime Deployments
+## 🔧 Troubleshooting
 
-The pipeline ensures zero-downtime deployments through:
-- **Blue-Green Deployment**: New instances spin up before old ones terminate
-- **Health Checks**: Only healthy instances receive traffic
-- **Rollback Capability**: Automatic rollback on failure
-- **CloudFront Caching**: Cached content serves during updates
+### If AWS deployment fails:
+1. **AWS CLI not installed**: Run `./setup-aws-environment.sh`
+2. **AWS credentials not configured**: Run `aws configure`
+3. **CloudFormation template errors**: Check the AWS Console for detailed error messages
+4. **Permission issues**: Ensure your AWS user has the required permissions (see README_AWS.md)
 
-### 📈 Deployment Metrics Dashboard
-
-After deployment, monitor your application:
-- **Response Times**: < 500ms average
-- **Error Rates**: < 1% error rate
-- **Throughput**: 1000+ requests/second
-- **Availability**: 99.9% uptime
-
-### 🎨 Feature Branch Workflow
-
-For new features:
-```bash
-# Create feature branch
-git checkout -b feature/ai-enhancement
-git push origin feature/ai-enhancement
-
-# Create Pull Request to develop
-# GitHub Actions will run tests automatically
-# Merge after approval
-
-# Deploy to dev
-git checkout develop
-git merge feature/ai-enhancement
-git push origin develop  # Auto-deploys to dev
-
-# Deploy to production
-git checkout main
-git merge develop
-git push origin main     # Auto-deploys to production
-```
-
-### 🔔 Notification Setup
-
-Get notified of deployments:
-1. **GitHub**: Watch repository for Actions
-2. **Slack**: Add webhook URL to secrets
-3. **Email**: Configure AWS SNS in monitoring setup
-4. **SMS**: Add phone number to SNS topics
+### If local deployment fails:
+1. **Node.js not found**: Install Node.js 18+ from https://nodejs.org
+2. **npm errors**: Try `npm install --force` or delete `node_modules` and reinstall
+3. **Port conflicts**: Change ports in the scripts if 3001 or 5173 are in use
