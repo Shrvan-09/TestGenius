@@ -195,6 +195,91 @@ deploy_infrastructure() {
     log "✅ Infrastructure deployed successfully"
 }
 
+# Configure environment variables for ECS
+configure_environment_variables() {
+    log "🔧 Configuring environment variables..."
+    
+    # Load environment variables from .env file if it exists
+    if [ -f "${PROJECT_DIR}/.env.${ENVIRONMENT}" ]; then
+        info "Loading environment variables from .env.${ENVIRONMENT}"
+        source "${PROJECT_DIR}/.env.${ENVIRONMENT}"
+    elif [ -f "${PROJECT_DIR}/.env" ]; then
+        info "Loading environment variables from .env"
+        source "${PROJECT_DIR}/.env"
+    fi
+    
+    # Get database and cache endpoints from CloudFormation
+    RDS_ENDPOINT=$(aws cloudformation describe-stacks \
+        --stack-name ${STACK_NAME} \
+        --query 'Stacks[0].Outputs[?OutputKey==`RDSEndpoint`].OutputValue' \
+        --output text --region ${REGION} 2>/dev/null || echo "localhost")
+    
+    CACHE_ENDPOINT=$(aws cloudformation describe-stacks \
+        --stack-name ${STACK_NAME} \
+        --query 'Stacks[0].Outputs[?OutputKey==`ElastiCacheEndpoint`].OutputValue' \
+        --output text --region ${REGION} 2>/dev/null || echo "localhost")
+    
+    CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
+        --stack-name ${STACK_NAME} \
+        --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontURL`].OutputValue' \
+        --output text --region ${REGION} 2>/dev/null || echo "https://localhost")
+    
+    # Generate secrets if not provided
+    JWT_SECRET_GENERATED="${JWT_SECRET:-$(openssl rand -base64 32)}"
+    SESSION_SECRET_GENERATED="${SESSION_SECRET:-$(openssl rand -base64 32)}"
+    
+    # Update ECS Task Definition with environment variables
+    TASK_DEF_ARN=$(aws ecs describe-services \
+        --cluster ${STACK_NAME}-cluster \
+        --services ${STACK_NAME}-service \
+        --query 'services[0].taskDefinition' \
+        --output text --region ${REGION})
+    
+    # Get current task definition
+    aws ecs describe-task-definition \
+        --task-definition ${TASK_DEF_ARN} \
+        --region ${REGION} > /tmp/current-task-def.json
+    
+    # Update environment variables in task definition
+    jq --arg env "${ENVIRONMENT}" \
+       --arg dburl "postgresql://testgenius:password@${RDS_ENDPOINT}:5432/testgenius" \
+       --arg redisurl "redis://${CACHE_ENDPOINT}:6379" \
+       --arg jwtSecret "${JWT_SECRET_GENERATED}" \
+       --arg sessionSecret "${SESSION_SECRET_GENERATED}" \
+       --arg googleKey "${GOOGLE_AI_API_KEY:-}" \
+       --arg openaiKey "${OPENAI_API_KEY:-}" \
+       --arg corsOrigin "${CLOUDFRONT_URL}" \
+       '.taskDefinition.containerDefinitions[0].environment = [
+         {"name": "NODE_ENV", "value": $env},
+         {"name": "PORT", "value": "3000"},
+         {"name": "AWS_REGION", "value": "'${REGION}'"},
+         {"name": "DATABASE_URL", "value": $dburl},
+         {"name": "REDIS_URL", "value": $redisurl},
+         {"name": "JWT_SECRET", "value": $jwtSecret},
+         {"name": "SESSION_SECRET", "value": $sessionSecret},
+         {"name": "GOOGLE_AI_API_KEY", "value": $googleKey},
+         {"name": "OPENAI_API_KEY", "value": $openaiKey},
+         {"name": "CORS_ORIGIN", "value": $corsOrigin}
+       ] | del(.taskDefinition.taskDefinitionArn, .taskDefinition.revision, .taskDefinition.status, .taskDefinition.requiresAttributes, .taskDefinition.placementConstraints, .taskDefinition.compatibilities, .taskDefinition.registeredAt, .taskDefinition.registeredBy)' \
+       /tmp/current-task-def.json > /tmp/updated-task-def.json
+    
+    # Register new task definition
+    NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+        --cli-input-json file:///tmp/updated-task-def.json \
+        --region ${REGION} \
+        --query 'taskDefinition.taskDefinitionArn' \
+        --output text)
+    
+    # Update service to use new task definition
+    aws ecs update-service \
+        --cluster ${STACK_NAME}-cluster \
+        --service ${STACK_NAME}-service \
+        --task-definition ${NEW_TASK_DEF_ARN} \
+        --region ${REGION} > /dev/null
+    
+    log "✅ Environment variables configured and service updated"
+}
+
 # Deploy frontend to S3 and CloudFront
 deploy_frontend() {
     log "🌐 Deploying frontend to S3 and CloudFront..."
@@ -343,6 +428,7 @@ main() {
     build_frontend
     build_and_push_image
     deploy_infrastructure
+    configure_environment_variables
     deploy_frontend
     wait_for_deployment
     run_health_checks
@@ -353,6 +439,8 @@ main() {
 cleanup() {
     rm -f /tmp/docker-image-uri.env
     rm -f packaged-template.yaml
+    rm -f /tmp/current-task-def.json
+    rm -f /tmp/updated-task-def.json
 }
 trap cleanup EXIT
 

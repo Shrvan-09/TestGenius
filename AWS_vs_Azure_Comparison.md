@@ -126,6 +126,33 @@ Total: ~$195/month
 
 ## 🛠 Usage Instructions
 
+### Environment Configuration
+
+**1. Copy the example environment file:**
+```bash
+cd project
+cp .env.example .env
+```
+
+**2. Edit `.env` with your actual values:**
+```bash
+# Required: AI service API keys
+GOOGLE_AI_API_KEY=your_actual_google_ai_api_key
+OPENAI_API_KEY=your_actual_openai_api_key
+
+# Required: Security secrets (generate random values)
+JWT_SECRET=$(openssl rand -base64 32)
+SESSION_SECRET=$(openssl rand -base64 32)
+
+# Optional: Database (will be created automatically in production)
+DATABASE_URL=postgresql://postgres:password@localhost:5432/testgenius_dev
+```
+
+**3. Environment-specific files:**
+- `.env` - Local development
+- `.env.staging` - Staging deployment  
+- `.env.prod` - Production deployment
+
 ### AWS Deployment
 ```bash
 # Prerequisites
@@ -174,7 +201,8 @@ If you later decide to switch platforms:
 - [ ] AWS/Azure account with appropriate permissions
 - [ ] Domain name registered and DNS configured
 - [ ] SSL certificate obtained (Let's Encrypt or purchased)
-- [ ] Environment variables and secrets defined
+- [ ] Environment variables configured (.env files)
+- [ ] API keys for AI services (Google AI, OpenAI)
 - [ ] Database schema and initial data prepared
 - [ ] Monitoring alerts configured
 
