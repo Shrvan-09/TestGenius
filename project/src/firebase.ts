@@ -3,13 +3,13 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCKeSRlN1ynqVAcHFvLQulIbXvZ1379M8c",
-  authDomain: "testgenius-auth.firebaseapp.com",
-  projectId: "testgenius-auth",
-  storageBucket: "testgenius-auth.firebasestorage.app",
-  messagingSenderId: "1003422488924",
-  appId: "1:1003422488924:web:d802bf83a6399a850d0999",
-  measurementId: "G-E4SWWH8CFM"
+  apiKey: "FIREASE_API_KEY",
+  authDomain: "FIREBASE_AUTH_DOMAIN",
+  projectId: "FIREBASE PROJECT_ID",
+  storageBucket: "FIREBASE_STORAGE_BUCKET",
+  messagingSenderId: "FIREBASE_MESSAGE_SENDER_ID",
+  appId: "FIREBASE_APP_ID",
+  measurementId: "FIREBASE_MEASUREMENT_ID"
 };
 
 
